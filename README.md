@@ -1,24 +1,61 @@
-# Building Change Detection to CAD (QGIS Plugin)
+Building Change to CAD (QGIS Plugin) 🏢🛰️
 
-An automated QGIS Python plugin designed for urban change detection using multi-temporal satellite imagery. It computes NDBI spectral differencing, extracts changed building structures, and directly exports vectors into AutoCAD DXF format.
+"QGIS Plugin" (https://img.shields.io/badge/QGIS-Plugin-green?logo=qgis)
+"Python" (https://img.shields.io/badge/Python-3.x-blue?logo=python)
+"License" (https://img.shields.io/badge/License-GPLv2-brightgreen)
 
-## Features
-- **Spectral Index Calculation:** Computes NDBI across Time 1 and Time 2 rasters.
-- **Noise Filtering:** Applies area-based thresholding to eliminate minor artifacts.
-- **Geometry Smoothing:** Refines vector polygons for clean CAD integration.
-- **Direct DXF Export:** Saves results directly as DXF files without intermediate manual conversion.
+Building Change to CAD is a QGIS plugin for detecting building changes from satellite imagery and exporting the results directly to CAD.
 
-## Installation
-1. Download or clone this repository.
-2. Copy the plugin folder to your QGIS profiles directory:
-   `%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\`
-3. Restart QGIS and enable **Building Change to CAD** from the **Plugin Manager**.
+The plugin uses NDBI (Normalized Difference Built-up Index) to identify built-up areas and compare changes between two dates. The detected changes are converted into vector polygons and exported as DXF, making them easier to use in AutoCAD and other CAD-based workflows.
 
-## Usage
-1. Open the plugin from the QGIS toolbar.
-2. Select SWIR and NIR bands for both Time 1 and Time 2.
-3. Set the NDBI Threshold Difference and Minimum Building Area (m²).
-4. Specify the output path for the `.dxf` file and click **Run Detection**.
+📌 Features
 
-## Author
-Abdalrhman Musa
+- NDBI Calculation – Calculates NDBI from SWIR and NIR imagery.
+- Building Change Detection – Compares imagery from two dates to identify changes in built-up areas.
+- Vector Extraction – Converts detected changes into polygon boundaries.
+- DXF Export – Exports the results directly to a CAD-compatible DXF file.
+- QGIS Interface – Provides a simple PyQt interface for selecting layers and adjusting detection parameters.
+
+🚀 Installation
+
+From the QGIS Plugin Repository
+
+1. Open QGIS.
+2. Go to Plugins → Manage and Install Plugins...
+3. Search for Building Change to CAD.
+4. Click Install.
+
+From ZIP
+
+1. Download the latest ".zip" file from the "Releases" (https://github.com/Abdom7sa/building_change_to_cad/releases) page.
+2. Open Plugins → Manage and Install Plugins... in QGIS.
+3. Select Install from ZIP.
+4. Choose the downloaded ZIP file.
+
+💻 Usage
+
+1. Open Building Change to CAD from the QGIS toolbar or Plugins menu.
+2. Select the required SWIR and NIR raster layers.
+3. Set the NDBI and change detection thresholds.
+4. Set the minimum building area if required.
+5. Choose the output DXF file location.
+6. Click Run Detection.
+
+The plugin processes the input imagery, detects areas of change, converts them into vector features, and exports the results as a DXF file.
+
+🛠️ Project Structure
+
+building_change_to_cad/
+├── __init__.py
+├── building_change_to_cad.py
+├── building_change_to_cad_dialog.py
+├── building_change_to_cad_dialog_base.ui
+├── icon.png
+├── metadata.txt
+└── LICENSE
+
+🎯 Why I Built It
+
+The idea behind this project was to connect remote sensing, GIS, and CAD in a single workflow.
+
+Instead of calculating NDBI, detecting changes, extracting building boundaries, and exporting them to CAD as separate steps, the plugin brings these tasks together inside QGIS.
