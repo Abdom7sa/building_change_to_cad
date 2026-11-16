@@ -1,8 +1,8 @@
 Building Change to CAD (QGIS Plugin) 🏢🛰️
 
-"QGIS Plugin" (https://img.shields.io/badge/QGIS-Plugin-green?logo=qgis)
-"Python" (https://img.shields.io/badge/Python-3.x-blue?logo=python)
-"License" (https://img.shields.io/badge/License-GPLv2-brightgreen)
+"QGIS" (https://img.shields.io/badge/QGIS-Plugin-589632?logo=qgis&logoColor=white)
+"Python" (https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
+"License" (https://img.shields.io/badge/License-GPL--2.0-brightgreen)
 
 Building Change to CAD is a QGIS plugin for detecting building changes from satellite imagery and exporting the results in different vector formats.
 
@@ -71,3 +71,11 @@ building_change_to_cad/
 📄 License
 
 This project is licensed under the GNU General Public License v2 (GPL-2.0).
+
+---
+
+👨‍💻 Author
+
+Abdalrhman Musa
+
+"GitHub Repository" (https://github.com/Abdom7sa/building_change_to_cad)
