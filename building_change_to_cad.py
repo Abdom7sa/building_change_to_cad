@@ -1,10 +1,10 @@
 """
-Building Change Detection & DXF Exporter
----------------------------------------
+Building Change Detection & Multi-Format Exporter
+------------------------------------------------
 Author: Abdalrhman Musa
 Description: A QGIS plugin that automates urban building change detection 
-             using dual-date NDBI spectral differencing and outputs smoothed 
-             vector boundaries to AutoCAD DXF format.
+             using dual-date NDBI spectral differencing and exports smoothed 
+             vector boundaries to CAD (DXF) or GIS formats (GeoPackage / Shapefile).
 """
 
 import os
@@ -18,19 +18,19 @@ from qgis.PyQt.QtWidgets import (
 )
 from qgis.core import (
     QgsProject, 
-    QgsDxfExport, 
+    QgsVectorFileWriter,
     QgsMessageLog, 
     Qgis
 )
 
 
 class BuildingChangeDialog(QDialog):
-    """Custom GUI for selecting multi-temporal rasters and parameters."""
+    """Custom GUI for selecting multi-temporal rasters, parameters, and export format."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Building Change Detection to CAD")
-        self.resize(440, 360)
+        self.setWindowTitle("Building Change Detection & Exporter")
+        self.resize(460, 390)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -80,8 +80,19 @@ class BuildingChangeDialog(QDialog):
         params_layout.addWidget(self.spin_min_area)
         main_layout.addLayout(params_layout)
 
-        # --- Section 3: Output CAD File ---
-        main_layout.addWidget(QLabel("<b>3. Export Location</b>"))
+        # --- Section 3: Output Format & Location ---
+        main_layout.addWidget(QLabel("<b>3. Export Settings & Location</b>"))
+        
+        format_layout = QHBoxLayout()
+        self.combo_format = QComboBox()
+        self.combo_format.addItems([
+            "AutoCAD DXF (*.dxf)", 
+            "GeoPackage (*.gpkg)", 
+            "ESRI Shapefile (*.shp)"
+        ])
+        format_layout.addWidget(QLabel("Format:"))
+        format_layout.addWidget(self.combo_format)
+        main_layout.addLayout(format_layout)
         
         out_layout = QHBoxLayout()
         self.combo_output_path = QComboBox()
@@ -109,8 +120,17 @@ class BuildingChangeDialog(QDialog):
         self.setLayout(main_layout)
 
     def _on_browse_clicked(self):
+        # Update file dialog filter based on user selection
+        format_idx = self.combo_format.currentIndex()
+        if format_idx == 0:
+            filter_str = "AutoCAD DXF File (*.dxf)"
+        elif format_idx == 1:
+            filter_str = "GeoPackage File (*.gpkg)"
+        else:
+            filter_str = "ESRI Shapefile (*.shp)"
+
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CAD File", "", "AutoCAD DXF File (*.dxf)"
+            self, "Save Output File", "", filter_str
         )
         if file_path:
             self.combo_output_path.setCurrentText(file_path)
@@ -145,7 +165,7 @@ class BuildingChangeToCAD:
         self.dlg = BuildingChangeDialog(self.iface.mainWindow())
         self._populate_rasters()
 
-        if self.dlg.exec_():
+        if self.dlg.exec():
             self._execute_pipeline()
 
     def _populate_rasters(self):
@@ -163,7 +183,7 @@ class BuildingChangeToCAD:
             combo.addItems(raster_names)
 
     def _execute_pipeline(self):
-        """Executes full change detection workflow: NDBI -> Raster Calc -> Polygonize -> DXF Export."""
+        """Executes full change detection workflow: NDBI -> Raster Calc -> Polygonize -> Multi-format Export."""
         try:
             # 1. Parse inputs from dialog
             swir1_name = self.dlg.combo_swir1.currentText()
@@ -173,10 +193,11 @@ class BuildingChangeToCAD:
 
             threshold_val = self.dlg.spin_threshold.value()
             min_area_val = self.dlg.spin_min_area.value()
-            dxf_target_path = self.dlg.combo_output_path.currentText().strip()
+            target_path = self.dlg.combo_output_path.currentText().strip()
+            format_idx = self.dlg.combo_format.currentIndex()
 
-            if not dxf_target_path:
-                QMessageBox.warning(None, "Missing Input", "Please select a valid output path for DXF export.")
+            if not target_path:
+                QMessageBox.warning(None, "Missing Input", "Please select a valid output path.")
                 return
 
             # 2. Retrieve layer objects
@@ -202,7 +223,6 @@ class BuildingChangeToCAD:
             layer_list = list(loaded_layers.values())
 
             # 4. Raster calculation (NDBI logic & Change detection)
-            # NDBI = (SWIR - NIR) / (SWIR + NIR)
             expr_ndbi1 = f'("{swir1_name}@1" - "{nir1_name}@1") / ("{swir1_name}@1" + "{nir1_name}@1")'
             expr_ndbi2 = f'("{swir2_name}@1" - "{nir2_name}@1") / ("{swir2_name}@1" + "{nir2_name}@1")'
             expr_diff = f'({expr_ndbi2}) - ({expr_ndbi1}) > {threshold_val}'
@@ -241,30 +261,47 @@ class BuildingChangeToCAD:
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             })['OUTPUT']
 
-            # 8. Export result layer to DXF
-            dxf_exporter = QgsDxfExport()
-            dxf_exporter.setCrs(smoothed_polygons.crs())
-            dxf_exporter.setSymbologyScale(1000)
-            dxf_exporter.setSymbologyMode(QgsDxfExport.NoSymbology)
-
-            dxf_layer = QgsDxfExport.DxfLayer(smoothed_polygons)
-            dxf_exporter.addLayers([dxf_layer])
-
-            with open(dxf_target_path, 'wb') as stream:
-                dxf_exporter.writeGroup(stream)
+            # 8. Export result layer based on selected user format
+            if format_idx == 0:
+                # Export to AutoCAD DXF using GDAL format converter
+                processing.run("gdal:convertformat", {
+                    'INPUT': smoothed_polygons,
+                    'OPTIONS': '',
+                    'OUTPUT': target_path
+                })
+            elif format_idx == 1:
+                # Export to GeoPackage (GPKG)
+                error = QgsVectorFileWriter.writeAsVectorFormatV3(
+                    smoothed_polygons,
+                    target_path,
+                    smoothed_polygons.transformContext(),
+                    QgsVectorFileWriter.SaveVectorOptions()
+                )
+                if error[0] != QgsVectorFileWriter.NoError:
+                    raise Exception(f"GeoPackage export failed with error code: {error[0]}")
+            else:
+                # Export to ESRI Shapefile (SHP)
+                error = QgsVectorFileWriter.writeAsVectorFormatV3(
+                    smoothed_polygons,
+                    target_path,
+                    smoothed_polygons.transformContext(),
+                    QgsVectorFileWriter.SaveVectorOptions()
+                )
+                if error[0] != QgsVectorFileWriter.NoError:
+                    raise Exception(f"Shapefile export failed with error code: {error[0]}")
 
             # 9. Feedback to user
             self.iface.messageBar().pushMessage(
-                "Success", f"CAD file successfully generated at {dxf_target_path}", 
-                level=Qgis.Success, duration=6
+                "Success", f"File successfully generated at {target_path}", 
+                level=Qgis.MessageLevel.Success, duration=6
             )
             QMessageBox.information(
                 None, "Process Complete", 
-                f"Building change detection finished!\n\nExported file:\n{dxf_target_path}"
+                f"Building change detection finished!\n\nExported file:\n{target_path}"
             )
 
         except Exception as err:
-            QgsMessageLog.logMessage(str(err), 'BuildingChangeToCAD', level=Qgis.Critical)
+            QgsMessageLog.logMessage(str(err), 'BuildingChangeToCAD', level=Qgis.MessageLevel.Critical)
             QMessageBox.critical(
                 None, "Pipeline Error", 
                 f"An error occurred during execution:\n\n{str(err)}"
