@@ -1,6 +1,9 @@
 Building Change to CAD (QGIS Plugin) 🏢🛰️
 
-"QGIS" (https://img.shields.io/badge/QGIS-Plugin-589632?logo=qgis&logoColor=white)
+<p align="left">
+  <img src="https://cdn.jsdelivr.net/gh/qgis/QGIS@master/images/brand/Logo.svg" alt="QGIS Logo" height="55">
+  <img src="https://www.python.org/static/community_logos/python-logo.png" alt="Python Logo" height="55">
+</p>"QGIS Plugin" (https://img.shields.io/badge/QGIS-Plugin-589632?logo=qgis&logoColor=white)
 "Python" (https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
 "License" (https://img.shields.io/badge/License-GPL--2.0-brightgreen)
 
